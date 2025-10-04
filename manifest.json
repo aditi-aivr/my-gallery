@@ -31,13 +31,15 @@
       "src": "screenshots/shot1.jpg",
       "sizes": "1080x1920",
       "type": "image/jpg",
-      "label": "Gallery view"
+      "form_factor": "narrow",
+      "label": "Portrait view of gallery"
     },
     {
       "src": "screenshots/shot2.webp",
-      "sizes": "1080x1920",
+      "sizes": "1920x1080",
       "type": "image/webp",
-      "label": "Upload flow"
+      "form_factor": "wide",
+      "label": "Landscape view of gallery"
     }
   ],
   "shortcuts": [
@@ -132,3 +134,4 @@
     }
   }
 }
+
