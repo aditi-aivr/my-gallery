@@ -28,15 +28,15 @@
   ],
   "screenshots": [
     {
-      "src": "screenshots/shot1.png",
+      "src": "screenshots/shot1.jpg",
       "sizes": "1080x1920",
-      "type": "image/png",
+      "type": "image/jpg",
       "label": "Gallery view"
     },
     {
-      "src": "screenshots/shot2.png",
+      "src": "screenshots/shot2.webp",
       "sizes": "1080x1920",
-      "type": "image/png",
+      "type": "image/webp",
       "label": "Upload flow"
     }
   ],
