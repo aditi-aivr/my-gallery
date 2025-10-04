@@ -1,0 +1,351 @@
+<!doctype html>
+<html>
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>My Local Photo Gallery</title>
+    <style>
+        :root {
+            --accent: #1976d2;
+            --bg: #f6f8fb
+        }
+
+        body {
+            font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+            margin: 0;
+            padding: 16px;
+            background: var(--bg);
+            color: #111
+        }
+
+        header {
+            display: flex;
+            align-items: center;
+            gap: 12px
+        }
+
+        h1 {
+            font-size: 1.2rem;
+            margin: 0
+        }
+
+        .controls {
+            margin-top: 12px;
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap
+        }
+
+        input[type=file] {
+            display: inline-block
+        }
+
+        button {
+            background: var(--accent);
+            color: #fff;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-weight: 600
+        }
+
+        button.ghost {
+            background: transparent;
+            color: var(--accent);
+            border: 2px solid var(--accent)
+        }
+
+        #status {
+            margin-left: 8px;
+            font-size: .9rem;
+            color: #444
+        }
+
+        .gallery {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+            gap: 10px;
+            margin-top: 18px
+        }
+
+        .item {
+            position: relative;
+            border-radius: 10px;
+            overflow: hidden;
+            background: #fff;
+            box-shadow: 0 1px 4px rgba(0, 0, 0, .08);
+            display: flex;
+            flex-direction: column;
+            align-items: center
+        }
+
+        .item img {
+            width: 100%;
+            height: 110px;
+            object-fit: cover;
+            display: block
+        }
+
+        .meta {
+            font-size: .75rem;
+            padding: 6px;
+            text-align: center;
+            color: #333
+        }
+
+        .actions {
+            position: absolute;
+            right: 6px;
+            top: 6px;
+            display: flex;
+            gap: 6px
+        }
+
+        .icon-btn {
+            background: rgba(0, 0, 0, 0.45);
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            padding: 6px;
+            font-size: 12px
+        }
+
+        footer {
+            margin-top: 18px;
+            font-size: .85rem;
+            color: #555
+        }
+
+        @media(min-width:700px) {
+            .gallery {
+                grid-template-columns: repeat(auto-fill, minmax(150px, 1fr))
+            }
+
+            .item img {
+                height: 140px
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        <h1>📁 My Local Photo Gallery</h1>
+        <div id="status">Loading…</div>
+    </header>
+
+    <div class="controls">
+        <input id="fileInput" type="file" accept="image/*" multiple />
+        <button id="saveBtn">Save Selected Photos</button>
+        <button id="clearBtn" class="ghost">Clear All</button>
+    </div>
+
+    <div class="gallery" id="gallery" aria-live="polite"></div>
+
+    <footer>
+        Photos are stored locally on your device inside the app (IndexedDB). Uninstalling the app will remove them.
+    </footer>
+
+    <script>
+        (async () => {
+            // DB config
+            const DB_NAME = 'my_photo_gallery_db';
+            const DB_VERSION = 1;
+            const STORE = 'photos';
+
+            // UI refs
+            const fileInput = document.getElementById('fileInput');
+            const saveBtn = document.getElementById('saveBtn');
+            const clearBtn = document.getElementById('clearBtn');
+            const gallery = document.getElementById('gallery');
+            const status = document.getElementById('status');
+
+            // open (or create) IndexedDB
+            function openDB() {
+                return new Promise((resolve, reject) => {
+                    const req = indexedDB.open(DB_NAME, DB_VERSION);
+                    req.onupgradeneeded = e => {
+                        const db = e.target.result;
+                        if (!db.objectStoreNames.contains(STORE)) {
+                            const store = db.createObjectStore(STORE, { keyPath: 'id', autoIncrement: true });
+                            store.createIndex('date', 'date', { unique: false });
+                        }
+                    };
+                    req.onsuccess = e => resolve(e.target.result);
+                    req.onerror = e => reject(e.target.error);
+                });
+            }
+
+            const db = await openDB();
+            status.textContent = 'Ready';
+
+            // Add one photo record (photoObj: {name,type,date,blob})
+            function addPhoto(photoObj) {
+                return new Promise((resolve, reject) => {
+                    const tx = db.transaction(STORE, 'readwrite');
+                    const store = tx.objectStore(STORE);
+                    const req = store.add(photoObj);
+                    req.onsuccess = () => resolve(req.result);
+                    req.onerror = () => reject(req.error);
+                });
+            }
+
+            // Save all selected files (multiple) and wait for completion
+            async function saveSelectedFiles() {
+                const files = fileInput.files;
+                if (!files || files.length === 0) {
+                    alert('Please select one or more images first.');
+                    return;
+                }
+                saveBtn.disabled = true;
+                status.textContent = 'Saving ' + files.length + ' photo(s)…';
+
+                try {
+                    // Convert File -> Blob (File already is a Blob), construct objects and add
+                    const adds = Array.from(files).map(file => {
+                        // store small metadata + the blob
+                        return addPhoto({
+                            name: file.name,
+                            type: file.type,
+                            date: Date.now(),
+                            blob: file // structured clone of Blob supported
+                        });
+                    });
+
+                    await Promise.all(adds);
+                    status.textContent = files.length + ' saved';
+                    fileInput.value = ''; // reset selection
+                    loadGallery();
+                } catch (err) {
+                    console.error(err);
+                    alert('Error saving photos: ' + err);
+                    status.textContent = 'Save failed';
+                } finally {
+                    saveBtn.disabled = false;
+                }
+            }
+
+            // Load all photos and render gallery
+            function loadGallery() {
+                gallery.innerHTML = '';
+                const tx = db.transaction(STORE, 'readonly');
+                const store = tx.objectStore(STORE);
+                const req = store.openCursor();
+                let count = 0;
+                req.onsuccess = e => {
+                    const cursor = e.target.result;
+                    if (cursor) {
+                        count++;
+                        const rec = cursor.value; // {id, name, type, date, blob}
+                        const item = buildItem(rec);
+                        gallery.appendChild(item);
+                        cursor.continue();
+                    } else {
+                        if (count === 0) {
+                            gallery.innerHTML = '<div style="color:#666">No photos saved yet.</div>';
+                        }
+                    }
+                };
+                req.onerror = e => {
+                    console.error('Cursor error', e);
+                };
+            }
+
+            // Build DOM element for record
+            function buildItem(rec) {
+                const wrap = document.createElement('div');
+                wrap.className = 'item';
+
+                const objectURL = URL.createObjectURL(rec.blob);
+                const img = document.createElement('img');
+                img.src = objectURL;
+                img.alt = rec.name || 'photo';
+                img.loading = 'lazy';
+                // revoke object URL after image loads to free memory
+                img.addEventListener('load', () => { try { URL.revokeObjectURL(objectURL); } catch (_) { } });
+
+                const actions = document.createElement('div');
+                actions.className = 'actions';
+
+                const delBtn = document.createElement('button');
+                delBtn.className = 'icon-btn';
+                delBtn.title = 'Delete';
+                delBtn.textContent = '🗑';
+                delBtn.addEventListener('click', async (ev) => {
+                    ev.stopPropagation();
+                    if (!confirm('Delete this photo?')) return;
+                    const tx = db.transaction(STORE, 'readwrite');
+                    tx.objectStore(STORE).delete(rec.id);
+                    tx.oncomplete = () => {
+                        wrap.remove();
+                        status.textContent = 'Photo deleted';
+                        // if nothing left, reload gallery to show "no photos"
+                        setTimeout(() => { if (!gallery.querySelector('.item')) loadGallery(); }, 120);
+                    };
+                });
+
+                const dlBtn = document.createElement('button');
+                dlBtn.className = 'icon-btn';
+                dlBtn.title = 'Download';
+                dlBtn.textContent = '⬇️';
+                dlBtn.addEventListener('click', (ev) => {
+                    ev.stopPropagation();
+                    // create a temporary link to download the blob
+                    const a = document.createElement('a');
+                    const blobUrl = URL.createObjectURL(rec.blob);
+                    a.href = blobUrl;
+                    a.download = rec.name || 'photo.jpg';
+                    document.body.appendChild(a);
+                    a.click();
+                    a.remove();
+                    setTimeout(() => URL.revokeObjectURL(blobUrl), 500);
+                });
+
+                actions.appendChild(dlBtn);
+                actions.appendChild(delBtn);
+
+                const meta = document.createElement('div');
+                meta.className = 'meta';
+                meta.textContent = `${rec.name || ''} • ${new Date(rec.date).toLocaleString()}`;
+
+                wrap.appendChild(img);
+                wrap.appendChild(actions);
+                wrap.appendChild(meta);
+
+                // tap to open full screen in a new tab (best effort)
+                wrap.addEventListener('click', () => {
+                    const win = window.open();
+                    const fullUrl = URL.createObjectURL(rec.blob);
+                    win.document.write(`<title>${rec.name || ''}</title><img src="${fullUrl}" style="max-width:100%;height:auto"/>`);
+                });
+
+                return wrap;
+            }
+
+            // Clear all photos
+            function clearAll() {
+                if (!confirm('Delete ALL saved photos? This cannot be undone.')) return;
+                const tx = db.transaction(STORE, 'readwrite');
+                tx.objectStore(STORE).clear();
+                tx.oncomplete = () => {
+                    loadGallery();
+                    status.textContent = 'All photos cleared';
+                };
+                tx.onerror = (e) => {
+                    console.error('Clear error', e);
+                    status.textContent = 'Clear failed';
+                };
+            }
+
+            // Wire UI
+            saveBtn.addEventListener('click', saveSelectedFiles);
+            clearBtn.addEventListener('click', clearAll);
+
+            // initial load
+            loadGallery();
+        })();
+    </script>
+</body>
+
+</html>
