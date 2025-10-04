@@ -1,142 +1,46 @@
 {
   "name": "ADITI",
   "short_name": "GalleryApp",
-  "description": "A simple offline photo gallery of Aditi - my personal space💖.",
+  "description": "A simple offline photo gallery of Aditi - my personal space 💖.",
   "start_url": "index.html",
   "scope": "/",
   "display": "standalone",
-  "display_override": ["standalone", "minimal-ui", "window-controls-overlay"],
   "orientation": "any",
   "theme_color": "#1976d2",
   "background_color": "#ffffff",
   "dir": "ltr",
   "lang": "en-US",
   "id": "com.aditi.galleryapp",
- "icons": [
-  {
-    "src": "icons/icon-192.png",
-    "sizes": "192x192",
-    "type": "image/png"
-  },
-  {
-    "src": "icons/icon-512.png",
-    "sizes": "512x512",
-    "type": "image/png"
-  },
-     {
-    "src": "icons/shortcut-gallery.png",
-    "sizes": "1024x1024",
-    "type": "image/png"
-  }
-],
+  "icons": [
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
   "screenshots": [
     {
-      "src": "screenshots/shot1.jpg",
+      "src": "screenshots/shot1.png",
       "sizes": "1080x1920",
-      "type": "image/jpg",
+      "type": "image/png",
       "form_factor": "narrow",
       "label": "Portrait view of gallery"
     },
     {
-      "src": "screenshots/shot2.webp",
+      "src": "screenshots/shot2.png",
       "sizes": "1920x1080",
-      "type": "image/webp",
+      "type": "image/png",
       "form_factor": "wide",
       "label": "Landscape view of gallery"
     }
   ],
-  "shortcuts": [
-    {
-      "name": "Open Gallery",
-      "short_name": "Gallery",
-      "description": "Open saved photos",
-      "url": "index.html",
-      "icons": [
-        {
-          "src": "icons/shortcut-gallery.png",
-          "sizes": "96x96",
-          "type": "image/png"
-        }
-      ]
-    },
-    {
-      "name": "Add Photos",
-      "short_name": "Upload",
-      "description": "Select and save photos",
-      "url": "index.html#upload",
-      "icons": [
-        {
-          "src": "icons/shortcut-upload.png",
-          "sizes": "96x96",
-          "type": "image/png"
-        }
-      ]
-    }
-  ],
   "categories": ["photo", "productivity"],
-  "file_handlers": [
-    {
-      "action": "/open",
-      "accept": {
-        "image/*": [".png", ".jpg", ".jpeg", ".webp"]
-      }
-    }
-  ],
-  "protocol_handlers": [
-    {
-      "protocol": "mailto",
-      "url": "mailto:?subject=%s"
-    }
-  ],
-  "launch_handler": {
-    "client_mode": "focus-existing"
-  },
-  "share_target": {
-    "action": "/share-target",
-    "method": "POST",
-    "enctype": "multipart/form-data",
-    "params": {
-      "title": "title",
-      "text": "text",
-      "url": "url",
-      "files": [
-        {
-          "name": "files",
-          "accept": ["image/*"]
-        }
-      ]
-    }
-  },
-  "prefer_related_applications": false,
-  "related_applications": [
-    {
-      "platform": "play",
-      "url": "https://play.google.com/store/apps/details?id=com.aditi.galleryapp",
-      "id": "com.aditi.galleryapp"
-    }
-  ],
-  "iarc_rating_id": "00000000-0000-0000-0000-000000000000",
-  "widgets": [
-    {
-      "src": "widgets/gallery-widget.html",
-      "name": "Gallery Widget",
-      "description": "Quick access to latest photos",
-      "version": "1.0"
-    }
-  ],
-  "edge_side_panel": {
-    "preferred_panel": "panel.html",
-    "default": "panel.html"
-  },
-  "note_taking": {
-    "enable": false
-  },
-  "scope_extensions": {
-    "/photos/": {
-      "handles": ["images"]
-    }
-  }
+  "prefer_related_applications": false
 }
-
-
-
